@@ -1,3 +1,5 @@
+# Hướng dẫn tích hợp face_caputure_sdk
+
 ## 1. Hướng dẫn cài đặt
 
 Tích hợp SDK vào dự án Flutter thông qua liên kết Git.
@@ -14,6 +16,7 @@ dependencies:
 ```
 
 Sau đó thực thi lệnh tải xuống các cập nhật phụ thuộc:
+
 ```bash
 flutter pub get
 ```
@@ -32,15 +35,15 @@ final _faceCaptureSdkPlugin = FaceCaptureSdk();
 Future<void> startCapture() async {
   final response = await _faceCaptureSdkPlugin.captureLiveFace(
     timeout: const Duration(seconds: 45), // Thời gian đợi tối đa trước khi hủy bỏ theo dõi
-    outputWidth: 720,                     // Kích thước chiều ngang của kết quả cắt (Crop)
-    outputHeight: 1280,                   // Kích thước chiều cao của kết quả cắt (Crop)
-    
+    outputWidth: 720,                     // Kích thước chiều ngang output
+    outputHeight: 1280,                   // Kích thước chiều cao output
+
     // Gọi hàm lắng nghe từng hệ khung hình để hiển thị Preview lên giao diện
-    onPreview: (String base64Frame) { 
+    onPreview: (String base64Frame) {
       // Thực hiện cấp phát lại giao diện (Ví dụ gọi hàm setState)
     },
-    
-    // Thiết lập tùy chọn cấu hình tính toán điểm ảnh nâng cao cho nhân (Core API) Native
+
+    // Thiết lập tùy chọn cấu hình
     config: const FaceSDKConfig(
       previewFps: 15,
       threadPool: 3,
@@ -48,35 +51,31 @@ Future<void> startCapture() async {
     ),
   );
 
-  // Xử lý dữ liệu trả về 
+  // Xử lý dữ liệu trả về
   if (response.status == 0 && response.data != null) {
-      print("Ảnh góc crop chuẩn [Base64]: ${response.data!.base64Image}");
-      print("Ảnh làm dở/mờ [Base64]: ${response.data!.base64ImageBlur}");
-      print("Điểm số chất lượng: ${response.data!.qualityScore}");
-      print("Xác thực Liveness: ${response.data!.livenessScore}");
+      print("Ảnh crop: ${response.data!.base64Image}");
+      print("Ảnh crop có làm mờ xung quanh: ${response.data!.base64ImageBlur}");
+      print("Điểm chất lượng ảnh: ${response.data!.qualityScore}");
+      print("Điểm liveness: ${response.data!.livenessScore}");
   } else {
-      print("Phản hồi lỗi phát sinh: ${response.message}");
+      print("Thông báo lỗi: ${response.message}");
   }
 }
 ```
 
 ## 3. Cấu hình các bộ tham số (`FaceSDKConfig`)
 
-Việc truyền vào `FaceSDKConfig` sẽ cho phép ghi đè các cấu hình tính toán và đánh giá chỉ tiêu của luồng xử lý ảnh sâu trong Android.
-
-| Tham số | Định dạng | Mặc định | Ý nghĩa chức năng |
-|----------|--------------|----------|--------|
-| `previewFps` | `int` | `15` | Giới hạn tần số chuyển tải khung hình về Dart thông qua callback `onPreview`. |
-| `regionRectDetect` | `List<int>` | `[0, 0, 1500, 1800]` | Kích thước khu vực khoanh vùng cho phép quét khuôn mặt nằm dưới dạng hình chữ nhật `[Trái, Trên, Phải, Dưới]`. |
-| `minFaceSize` | `int` | `0` | Kích thước tiêu chuẩn nhỏ nhất được công nhận là một khuôn mặt. |
-| `maxFaceSize` | `int` | `1000` | Kích thước khoanh vùng khống chế lớn nhất của thuật toán. |
-| `maskGlassesThreshold` | `double` | `0.5` | Ngưỡng cho phép khi phát hiện kính hiển vi, khẩu trang hoặc đồ vật che giấu. |
-| `distanceEye` | `int` | `120` | Quy định chuẩn cự ly cách biệt của đôi mắt trong bức ảnh tĩnh. |
-| `openEyeThreshold` | `double` | `0.12` | Mức đánh giá để lường độ hở của mắt, chống lại hành vi nhắm mắt. |
-| `lipRatioThreshold` | `double` | `0.5` | Ngưỡng đánh giá độ dị thường qua tỷ lệ kích thước đôi môi. |
-| `imageUnderexposedThreshold`| `int` | `100` | Cán cân phát hiện khung hình chiếu sáng thiếu sáng. Sẽ tự động từ chối nếu ảnh quá mờ/tối. |
-| `imageTooBrightThreshold` | `int` | `1500` | Cán cân phát hiện khung hình lộ quá nhiều ánh sáng (Chói lóa/Cháy sáng). |
-| `imageBlurThreshold` | `int` | `5` | Chỉ số quy ước chấp thuận tính sắc nét của viền phân giải. |
-| `threadPool` | `int` | `3` | Quy định mức độ phân bổ luồng CPU giải quyết toán đồ họa trên thiết bị Android. |
-
-Mọi khung hình bất đồng bộ được trích xuất từ mô-đun CameraX sẽ trải qua toàn bộ bài kiểm tra `FaceSDKConfig` và `Liveness`. Chỉ một hình ảnh hoàn hảo vượt qua xác thực mới kích hoạt trạng thái trả về thành công kèm giải phóng sạch phân luồng của vòng lặp RAM phần cứng. Các sai lệch sẽ tự động được gạt bỏ và bỏ qua để tránh gây lỗi (Crashing).
+| Tham số                      | Định dạng   | Mặc định             | Ý nghĩa chức năng                                                                                              |
+| ---------------------------- | ----------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `previewFps`                 | `int`       | `15`                 | Giới hạn tần số chuyển tải khung hình về Dart thông qua callback `onPreview`.                                  |
+| `regionRectDetect`           | `List<int>` | `[0, 0, 1500, 1800]` | Kích thước khu vực khoanh vùng cho phép quét khuôn mặt nằm dưới dạng hình chữ nhật `[Trái, Trên, Phải, Dưới]`. |
+| `minFaceSize`                | `int`       | `0`                  | Kích thước khuôn mặt bé nhất.                                                                                  |
+| `maxFaceSize`                | `int`       | `1000`               | Kích thước khuôn mặt lớn nhất.                                                                                 |
+| `maskGlassesThreshold`       | `double`    | `0.5`                | Ngưỡng cho phép khi phát hiện kính, khẩu trang.                                                                |
+| `distanceEye`                | `int`       | `120`                | Khoảng cách chấp nhận giữa 2 mắt.                                                                              |
+| `openEyeThreshold`           | `double`    | `0.12`               | Ngưỡng chấp nhận mở mắt.                                                                                       |
+| `lipRatioThreshold`          | `double`    | `0.5`                | Ngưỡng chấp nhận mở môi.                                                                                       |
+| `imageUnderexposedThreshold` | `int`       | `100`                | Ngưỡng ảnh tối.                                                                                                |
+| `imageTooBrightThreshold`    | `int`       | `1500`               | Ngưỡng ảnh sáng.                                                                                               |
+| `imageBlurThreshold`         | `int`       | `5`                  | Ngưỡng kiểm tra blur.                                                                                          |
+| `threadPool`                 | `int`       | `3`                  | Số luồng xử lý.                                                                                                |
